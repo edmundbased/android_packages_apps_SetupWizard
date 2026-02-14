@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
      SPDX-FileCopyrightText: 2013-2015 The CyanogenMod Project
-     SPDX-FileCopyrightText: 2017-2024 The LineageOS Project
+     SPDX-FileCopyrightText: 2017-2024 The GrandiOS Project
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
@@ -25,7 +25,7 @@
     <string name="intro_restore_button">Restaurar desde copia de seguridad</string>
     <string name="setup_location">Servicios de ubicación</string>
     <string name="location_access_summary"><b>Permitir aplicaciones que han solicitado el permiso</b> para usar la información de ubicación. Esto puede incluir la ubicación actual y otras ubicaciones recientes.</string>
-    <string name="setup_services">Características de LineageOS</string>
-    <string name="services_help_improve_cm">Ayuda a mejorar <xliff:g id="name" example="LineageOS">%s</xliff:g></string>
+    <string name="setup_services">Características de GrandiOS</string>
+    <string name="services_help_improve_cm">Ayuda a mejorar <xliff:g id="name" example="GrandiOS">%s</xliff:g></string>
     <string name="services_os_nav_keys_label"><b>Usar las teclas de navegación en pantalla</b> en vez de las teclas físicas.</string>
 </resources>

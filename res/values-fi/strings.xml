@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
      SPDX-FileCopyrightText: 2013-2015 The CyanogenMod Project
-     SPDX-FileCopyrightText: 2017-2024 The LineageOS Project
+     SPDX-FileCopyrightText: 2017-2024 The GrandiOS Project
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
@@ -26,11 +26,11 @@
     <string name="intro_restore_button">Palauta varmuuskopiosta</string>
     <string name="setup_location">Sijaintipalvelut</string>
     <string name="location_access_summary"><b>Salli sovellusten, jotka ovat kysyneet sinulta lupaa</b> käyttää sijaintitietojasi. Tämä saattaa sisältää nykyisen sijaintisi ja aiemmat sijaintisi.</string>
-    <string name="update_recovery_title">Päivitä Lineage Recovery</string>
-    <string name="update_recovery_description">Päivittää Lineage Recoveryn jokaisen päivityksen jälkeen ensimmäisellä käynnistyskerralla</string>
+    <string name="update_recovery_title">Päivitä Grandiose Recovery</string>
+    <string name="update_recovery_description">Päivittää Grandiose Recoveryn jokaisen päivityksen jälkeen ensimmäisellä käynnistyskerralla</string>
     <string name="update_recovery_warning">Recovery pävitetään kun asennus on valmis. Jos haluat säilyttää sen ennallaan, poista tämä ominaisuus käytöstä.</string>
-    <string name="update_recovery_setting">Päivitä Lineage Recovery käyttöjärjestelmän rinnalla</string>
-    <string name="setup_services">LineageOS-ominaisuudet</string>
-    <string name="services_help_improve_cm">Auta parantamaan <xliff:g id="name" example="LineageOS">%s</xliff:g>ia</string>
+    <string name="update_recovery_setting">Päivitä Grandiose Recovery käyttöjärjestelmän rinnalla</string>
+    <string name="setup_services">GrandiOS-ominaisuudet</string>
+    <string name="services_help_improve_cm">Auta parantamaan <xliff:g id="name" example="GrandiOS">%s</xliff:g>ia</string>
     <string name="services_os_nav_keys_label"><b>Käytä näytön navigointipalkkia</b> fyysisten näppäinten sijaan.</string>
 </resources>

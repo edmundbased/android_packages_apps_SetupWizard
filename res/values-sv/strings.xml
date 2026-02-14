@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
      SPDX-FileCopyrightText: 2013-2015 The CyanogenMod Project
-     SPDX-FileCopyrightText: 2017-2024 The LineageOS Project
+     SPDX-FileCopyrightText: 2017-2024 The GrandiOS Project
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
@@ -26,7 +26,7 @@
     <string name="setup_location">Platstjänster</string>
     <string name="location_access_summary"><b>Tillåt appar som du gett tillåtelse</b> att använda din platsinformation. Detta inkluderar din nuvarande plats och tidigare platser.</string>
     <string name="location_agps_access_summary">Ladda ner satellitdata från internet när Plats är på som avsevärt kan förbättra GPS:ens startprestanda.</string>
-    <string name="setup_services">LineageOS funktioner</string>
+    <string name="setup_services">GrandiOS funktioner</string>
     <string name="services_os_nav_keys_label"><b>Använder styrtangenter på skärmen</b> i stället för fysiska knappar.</string>
     <string name="setup_navigation">Navigering</string>
     <string name="navigation_summary">Välj önskad navigeringsmetod</string>
