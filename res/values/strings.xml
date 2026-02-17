@@ -77,6 +77,29 @@
     <string name="navbar_navigation">3-button navigation</string>
     <string name="hide_gesture_hint">Hide gestural navigation hint</string>
 
+    <!-- Agent setup page -->
+    <string name="setup_agent">Your Assistant</string>
+    <string name="agent_setup_summary">Personalize Grandi, your AI assistant</string>
+    <string name="agent_default_name" translatable="false">Grandi</string>
+    <string name="agent_name_label">What should your assistant be called?</string>
+    <string name="agent_creature_label">What kind of creature is it?</string>
+    <string name="agent_creature_hint">AI assistant, robot, familiar spirit, ghost in the machine\u2026</string>
+    <string name="agent_personality_label">Pick a personality</string>
+    <string name="agent_emoji_label">Pick a signature emoji</string>
+    <string name="agent_emoji_custom_label">Or type your own:</string>
+    <string name="personality_casual">Casual &amp; friendly</string>
+    <string name="personality_professional">Professional &amp; precise</string>
+    <string name="personality_warm">Warm &amp; caring</string>
+    <string name="personality_playful">Playful &amp; witty</string>
+    <string name="user_name_label">What should they call you?</string>
+    <string name="user_name_hint">Your name</string>
+    <string name="user_interests_label">What matters to you?</string>
+    <string name="user_interests_hint">Work, hobbies, projects, things you care about\u2026</string>
+    <string name="response_style_label">How do you prefer responses?</string>
+    <string name="style_brief">Brief &amp; direct</string>
+    <string name="style_detailed">Detailed &amp; thorough</string>
+    <string name="style_match">Match my style</string>
+
     <!-- Theme page -->
     <string name="setup_theme">Theme</string>
     <string name="theme_summary">Dark theme uses a black background to help keep battery alive longer on some screens</string>
