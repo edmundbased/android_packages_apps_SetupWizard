@@ -15,6 +15,7 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.RadioGroup;
@@ -185,6 +186,7 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
 
     private void buildEmojiGrid() {
         final GridLayout grid = findViewById(R.id.emoji_grid);
+        grid.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
         final int cellSizePx = dpToPx(40);
         final int radiusPx = dpToPx(10);
 
@@ -195,7 +197,7 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
             tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
             tv.setGravity(Gravity.CENTER);
             tv.setClickable(true);
-            tv.setFocusable(true);
+            tv.setFocusable(false);
 
             final GradientDrawable bg = new GradientDrawable();
             bg.setCornerRadius(radiusPx);
