@@ -8,6 +8,7 @@ package org.lineageos.setupwizard;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -25,9 +26,6 @@ import androidx.annotation.Nullable;
 
 import com.android.settingslib.Utils;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -36,8 +34,6 @@ import java.util.TimeZone;
 public class AgentSetupActivity extends BaseSetupWizardActivity {
 
     private static final String TAG = "AgentSetup";
-    private static final String WORKSPACE_DIR = "/data/system/agent/workspace";
-    private static final String WIZARD_DONE_MARKER = ".wizard_complete";
 
     private static final String[] EMOJI_OPTIONS = {
         // Smileys & faces
@@ -292,19 +288,19 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         final String timezone = TimeZone.getDefault().getID();
         final String language = Locale.getDefault().getDisplayLanguage();
 
-        final File workspaceDir = new File(WORKSPACE_DIR);
-        if (!workspaceDir.exists()) {
-            workspaceDir.mkdirs();
-        }
+        final String identityMd = buildIdentityMd(agentName, agentCreature, agentEmoji,
+                personality[0], personality[1]);
+        final String userMd = buildUserMd(userName, timezone, language, commStyle, userInterests);
 
-        writeFile(new File(workspaceDir, "IDENTITY.md"),
-                buildIdentityMd(agentName, agentCreature, agentEmoji,
-                        personality[0], personality[1]));
-        writeFile(new File(workspaceDir, "USER.md"),
-                buildUserMd(userName, timezone, language, commStyle, userInterests));
-        writeFile(new File(workspaceDir, WIZARD_DONE_MARKER), "");
+        // Primary: write via Settings.Secure (works regardless of SELinux)
+        Settings.Secure.putString(getContentResolver(),
+                "agent_wizard_identity", identityMd);
+        Settings.Secure.putString(getContentResolver(),
+                "agent_wizard_user", userMd);
+        Settings.Secure.putInt(getContentResolver(),
+                "agent_wizard_complete", 1);
 
-        Log.i(TAG, "Agent workspace files written from SetupWizard");
+        Log.i(TAG, "Agent workspace data written to Settings.Secure");
     }
 
     private String getAgentName() {
@@ -399,20 +395,6 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
                 + "Don't be weird about it \u2014 just enough to be helpful.)\n\n"
                 + "## Routines\n(Morning patterns, work hours, recurring things. "
                 + "Stuff that helps you anticipate.)\n";
-    }
-
-    private static void writeFile(File file, String content) {
-        try {
-            File parent = file.getParentFile();
-            if (parent != null && !parent.exists()) {
-                parent.mkdirs();
-            }
-            try (FileWriter writer = new FileWriter(file)) {
-                writer.write(content);
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to write " + file.getName(), e);
-        }
     }
 
     private int dpToPx(int dp) {
