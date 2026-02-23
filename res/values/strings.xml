@@ -98,6 +98,11 @@
     <string name="style_brief">Brief &amp; direct</string>
     <string name="style_detailed">Detailed &amp; thorough</string>
     <string name="style_match">Match my style</string>
+    <string name="agent_gateway_login_label">Connect cloud account (Email / Google)</string>
+    <string name="agent_gateway_login_hint">Sign in once to use managed LLM access from your GrandiOS account.</string>
+    <string name="agent_gateway_login_button">Sign In</string>
+    <string name="agent_gateway_logged_out">Cloud account: not signed in</string>
+    <string name="agent_gateway_logged_in">Cloud account connected</string>
 
     <!-- Theme page -->
     <string name="setup_theme">Theme</string>

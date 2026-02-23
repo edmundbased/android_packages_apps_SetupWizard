@@ -5,6 +5,7 @@
 
 package org.lineageos.setupwizard;
 
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -20,7 +21,9 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.RadioGroup;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
@@ -151,6 +154,8 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
     private EditText mUserInterestsInput;
     private RadioGroup mResponseStyleGroup;
     private EditText mEmojiCustomInput;
+    private TextView mGatewayAuthStatus;
+    private Button mGatewayAuthButton;
 
     private String mSelectedEmoji = EMOJI_OPTIONS[0];
     private boolean mUsingCustomEmoji;
@@ -170,6 +175,8 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         mUserInterestsInput = findViewById(R.id.user_interests_input);
         mResponseStyleGroup = findViewById(R.id.response_style_radio_group);
         mEmojiCustomInput = findViewById(R.id.agent_emoji_custom_input);
+        mGatewayAuthStatus = findViewById(R.id.gateway_auth_status);
+        mGatewayAuthButton = findViewById(R.id.gateway_auth_button);
 
         mAgentNameInput.setText(getString(R.string.agent_default_name));
         mPersonalityGroup.check(R.id.radio_casual);
@@ -178,6 +185,14 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         mAccentColor = Utils.getColorAccentDefaultColor(this);
         buildEmojiGrid();
         setupCustomEmojiInput();
+        mGatewayAuthButton.setOnClickListener(v -> launchGatewayLoginFlow());
+        refreshGatewayAuthStatus();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshGatewayAuthStatus();
     }
 
     private void buildEmojiGrid() {
@@ -269,6 +284,41 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
             prevBg.setStroke(0, 0x00000000);
             mSelectedEmojiView = null;
         }
+    }
+
+    private void launchGatewayLoginFlow() {
+        try {
+            if (TextUtils.isEmpty(AgentGatewayAuthController.getPrivyAppId())
+                    || TextUtils.isEmpty(AgentGatewayAuthController.getPrivyClientId())) {
+                Toast.makeText(this,
+                        "Privy app/client ID missing on device; using gateway defaults",
+                        Toast.LENGTH_SHORT).show();
+            }
+            final Intent intent = new Intent(Intent.ACTION_VIEW,
+                    AgentGatewayAuthController.buildAuthStartUri("setupwizard"));
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            startActivity(intent);
+        } catch (Exception e) {
+            Log.w(TAG, "Unable to launch gateway auth", e);
+            Toast.makeText(this, "Unable to open cloud login", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void refreshGatewayAuthStatus() {
+        if (mGatewayAuthStatus == null) {
+            return;
+        }
+        final boolean hasSession = AgentGatewayAuthController.hasStoredSession();
+        final String accountId = AgentGatewayAuthController.getStoredAccountId();
+        if (!hasSession) {
+            mGatewayAuthStatus.setText(R.string.agent_gateway_logged_out);
+            return;
+        }
+        if (TextUtils.isEmpty(accountId)) {
+            mGatewayAuthStatus.setText(R.string.agent_gateway_logged_in);
+            return;
+        }
+        mGatewayAuthStatus.setText(getString(R.string.agent_gateway_logged_in) + " (" + accountId + ")");
     }
 
     @Override

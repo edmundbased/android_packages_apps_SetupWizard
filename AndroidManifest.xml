@@ -296,6 +296,24 @@
         </activity>
 
         <activity
+            android:name=".AgentGatewayAuthCallbackActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:theme="@style/NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="auth"
+                    android:path="/callback"
+                    android:scheme="grandios-setup" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".FinishActivity"
             android:label="@string/activity_label_empty"
             android:configChanges="mcc|mnc"
