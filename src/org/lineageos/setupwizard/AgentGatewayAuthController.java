@@ -40,6 +40,9 @@ final class AgentGatewayAuthController {
     private static final String PROP_PRIVY_CLIENT_ID = "persist.agent.privy_client_id";
     private static final String PROP_PRIVY_LOGIN_METHODS = "persist.agent.privy_login_methods";
     private static final String DEFAULT_BASE_URL = "https://ai-gateway.vercel.sh/v1";
+    private static final String DEFAULT_PRIVY_APP_ID = "cmc25921q01izle0ms5iojge4";
+    private static final String DEFAULT_PRIVY_CLIENT_ID =
+            "client-WY6MrvJYGhzCEdqwYmPBxu5sEg4s7x6C7ZE98pdwQAWYt";
     private static final String DEFAULT_PRIVY_LOGIN_METHODS = "email,google";
 
     private static final String RUNTIME_DIR = "/data/misc/agent/runtime";
@@ -99,11 +102,13 @@ final class AgentGatewayAuthController {
     }
 
     static String getPrivyAppId() {
-        return SystemProperties.get(PROP_PRIVY_APP_ID, "").trim();
+        final String v = SystemProperties.get(PROP_PRIVY_APP_ID, "").trim();
+        return TextUtils.isEmpty(v) ? DEFAULT_PRIVY_APP_ID : v;
     }
 
     static String getPrivyClientId() {
-        return SystemProperties.get(PROP_PRIVY_CLIENT_ID, "").trim();
+        final String v = SystemProperties.get(PROP_PRIVY_CLIENT_ID, "").trim();
+        return TextUtils.isEmpty(v) ? DEFAULT_PRIVY_CLIENT_ID : v;
     }
 
     static String getPrivyLoginMethods() {

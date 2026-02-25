@@ -288,12 +288,6 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
 
     private void launchGatewayLoginFlow() {
         try {
-            if (TextUtils.isEmpty(AgentGatewayAuthController.getPrivyAppId())
-                    || TextUtils.isEmpty(AgentGatewayAuthController.getPrivyClientId())) {
-                Toast.makeText(this,
-                        "Privy app/client ID missing on device; using gateway defaults",
-                        Toast.LENGTH_SHORT).show();
-            }
             final Intent intent = new Intent(Intent.ACTION_VIEW,
                     AgentGatewayAuthController.buildAuthStartUri("setupwizard"));
             intent.addCategory(Intent.CATEGORY_BROWSABLE);
