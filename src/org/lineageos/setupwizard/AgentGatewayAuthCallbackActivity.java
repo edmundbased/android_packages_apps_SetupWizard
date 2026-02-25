@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Deep-link callback for setup wizard managed-gateway auth.
+ * Deep-link callback for setup wizard managed-gateway auth (Google OAuth flow).
  */
 public class AgentGatewayAuthCallbackActivity extends Activity {
     private static final String TAG = "SwGatewayCallback";
@@ -90,13 +90,19 @@ public class AgentGatewayAuthCallbackActivity extends Activity {
                 if (TextUtils.isEmpty(identityToken)) {
                     throw new IllegalStateException("Missing callback tokens");
                 }
+
+                // Try gateway exchange; fall back to direct auth if gateway
+                // doesn't support the exchange endpoint
                 final AgentGatewayAuthController.ExchangeResult result =
-                        AgentGatewayAuthController.exchangeIdentityToken(identityToken);
+                        AgentGatewayAuthController.exchangeOrDirect(identityToken);
 
                 AgentGatewayAuthController.persistSession(result);
                 Settings.Secure.putInt(getContentResolver(), "agent_gateway_logged_in", 1);
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Cloud account connected", Toast.LENGTH_SHORT).show();
+                    final boolean isDirect = identityToken.equals(result.accessToken);
+                    final String msg = isDirect
+                            ? "Signed in (direct auth)" : "Cloud account connected";
+                    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
                     final Intent next = new Intent(this, AgentSetupActivity.class);
                     next.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                             | Intent.FLAG_ACTIVITY_CLEAR_TOP

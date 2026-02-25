@@ -5,7 +5,6 @@
 
 package org.lineageos.setupwizard;
 
-import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -20,6 +19,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.GridLayout;
+import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.Button;
 import android.widget.TextView;
@@ -154,8 +154,16 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
     private EditText mUserInterestsInput;
     private RadioGroup mResponseStyleGroup;
     private EditText mEmojiCustomInput;
+
+    // Gateway auth
     private TextView mGatewayAuthStatus;
-    private Button mGatewayAuthButton;
+    private LinearLayout mGatewayEmailRow;
+    private EditText mGatewayEmailInput;
+    private Button mGatewaySendCodeButton;
+    private LinearLayout mGatewayOtpRow;
+    private EditText mGatewayOtpInput;
+    private Button mGatewayVerifyCodeButton;
+    private Button mGatewayGoogleLoginButton;
 
     private String mSelectedEmoji = EMOJI_OPTIONS[0];
     private boolean mUsingCustomEmoji;
@@ -175,8 +183,16 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         mUserInterestsInput = findViewById(R.id.user_interests_input);
         mResponseStyleGroup = findViewById(R.id.response_style_radio_group);
         mEmojiCustomInput = findViewById(R.id.agent_emoji_custom_input);
+
+        // Gateway auth views
         mGatewayAuthStatus = findViewById(R.id.gateway_auth_status);
-        mGatewayAuthButton = findViewById(R.id.gateway_auth_button);
+        mGatewayEmailRow = findViewById(R.id.gateway_email_row);
+        mGatewayEmailInput = findViewById(R.id.gateway_email_input);
+        mGatewaySendCodeButton = findViewById(R.id.gateway_send_code_button);
+        mGatewayOtpRow = findViewById(R.id.gateway_otp_row);
+        mGatewayOtpInput = findViewById(R.id.gateway_otp_input);
+        mGatewayVerifyCodeButton = findViewById(R.id.gateway_verify_code_button);
+        mGatewayGoogleLoginButton = findViewById(R.id.gateway_google_login_button);
 
         mAgentNameInput.setText(getString(R.string.agent_default_name));
         mPersonalityGroup.check(R.id.radio_casual);
@@ -185,7 +201,12 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         mAccentColor = Utils.getColorAccentDefaultColor(this);
         buildEmojiGrid();
         setupCustomEmojiInput();
-        mGatewayAuthButton.setOnClickListener(v -> launchGatewayLoginFlow());
+
+        // Gateway auth listeners
+        mGatewaySendCodeButton.setOnClickListener(v -> sendEmailCode());
+        mGatewayVerifyCodeButton.setOnClickListener(v -> verifyEmailCode());
+        mGatewayGoogleLoginButton.setOnClickListener(v -> launchGoogleLogin());
+
         refreshGatewayAuthStatus();
     }
 
@@ -194,6 +215,122 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         super.onResume();
         refreshGatewayAuthStatus();
     }
+
+    // ── Gateway Email OTP ───────────────────────────────────────────────
+
+    private void sendEmailCode() {
+        final String email = mGatewayEmailInput.getText().toString().trim();
+        if (TextUtils.isEmpty(email) || !email.contains("@")) {
+            Toast.makeText(this, "Enter a valid email address", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        mGatewaySendCodeButton.setEnabled(false);
+        mGatewaySendCodeButton.setText("Sending\u2026");
+
+        AgentGatewayAuthController.sendEmailOtp(email, new PrivyAuthClient.Callback<>() {
+            @Override
+            public void onSuccess(Void result) {
+                runOnUiThread(() -> {
+                    mGatewayOtpRow.setVisibility(View.VISIBLE);
+                    mGatewaySendCodeButton.setEnabled(true);
+                    mGatewaySendCodeButton.setText(R.string.agent_gateway_send_code);
+                    mGatewayAuthStatus.setText(R.string.agent_gateway_code_sent);
+                    mGatewayOtpInput.requestFocus();
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> {
+                    mGatewaySendCodeButton.setEnabled(true);
+                    mGatewaySendCodeButton.setText(R.string.agent_gateway_send_code);
+                    Toast.makeText(AgentSetupActivity.this,
+                            "Failed to send code: " + message, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void verifyEmailCode() {
+        final String email = mGatewayEmailInput.getText().toString().trim();
+        final String code = mGatewayOtpInput.getText().toString().trim();
+
+        if (TextUtils.isEmpty(code) || code.length() < 6) {
+            Toast.makeText(this, "Enter the 6-digit code", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        mGatewayVerifyCodeButton.setEnabled(false);
+        mGatewayVerifyCodeButton.setText("Verifying\u2026");
+
+        AgentGatewayAuthController.verifyEmailOtp(email, code,
+                new PrivyAuthClient.Callback<>() {
+            @Override
+            public void onSuccess(AgentGatewayAuthController.ExchangeResult result) {
+                Settings.Secure.putInt(getContentResolver(), "agent_gateway_logged_in", 1);
+                runOnUiThread(() -> {
+                    mGatewayVerifyCodeButton.setEnabled(true);
+                    mGatewayVerifyCodeButton.setText(R.string.agent_gateway_verify_code);
+                    refreshGatewayAuthStatus();
+                    Toast.makeText(AgentSetupActivity.this,
+                            "Signed in", Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> {
+                    mGatewayVerifyCodeButton.setEnabled(true);
+                    mGatewayVerifyCodeButton.setText(R.string.agent_gateway_verify_code);
+                    Toast.makeText(AgentSetupActivity.this,
+                            "Verification failed: " + message, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    // ── Google OAuth ────────────────────────────────────────────────────
+
+    private void launchGoogleLogin() {
+        mGatewayGoogleLoginButton.setEnabled(false);
+        AgentGatewayAuthController.initiateGoogleOAuth(this, "setupwizard");
+        mGatewayGoogleLoginButton.postDelayed(() -> mGatewayGoogleLoginButton.setEnabled(true),
+                2000);
+    }
+
+    // ── Gateway status ──────────────────────────────────────────────────
+
+    private void refreshGatewayAuthStatus() {
+        if (mGatewayAuthStatus == null) {
+            return;
+        }
+        final boolean hasSession = AgentGatewayAuthController.hasStoredSession();
+        final String accountId = AgentGatewayAuthController.getStoredAccountId();
+        if (!hasSession) {
+            mGatewayAuthStatus.setText(R.string.agent_gateway_logged_out);
+            setLoginUiVisible(true);
+            return;
+        }
+        if (TextUtils.isEmpty(accountId)) {
+            mGatewayAuthStatus.setText(R.string.agent_gateway_logged_in);
+        } else {
+            mGatewayAuthStatus.setText(getString(R.string.agent_gateway_logged_in)
+                    + " (" + accountId + ")");
+        }
+        setLoginUiVisible(false);
+    }
+
+    private void setLoginUiVisible(boolean visible) {
+        final int vis = visible ? View.VISIBLE : View.GONE;
+        if (mGatewayEmailRow != null) mGatewayEmailRow.setVisibility(vis);
+        if (mGatewayGoogleLoginButton != null) mGatewayGoogleLoginButton.setVisibility(vis);
+        if (!visible && mGatewayOtpRow != null) {
+            mGatewayOtpRow.setVisibility(View.GONE);
+        }
+    }
+
+    // ── Emoji grid ──────────────────────────────────────────────────────
 
     private void buildEmojiGrid() {
         final GridLayout grid = findViewById(R.id.emoji_grid);
@@ -245,12 +382,10 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
             public void afterTextChanged(Editable s) {
                 final String custom = s.toString().trim();
                 if (!TextUtils.isEmpty(custom)) {
-                    // User typed a custom emoji — deselect grid
                     deselectGrid();
                     mSelectedEmoji = custom;
                     mUsingCustomEmoji = true;
                 } else if (mUsingCustomEmoji) {
-                    // Cleared custom input — re-select first grid emoji
                     mUsingCustomEmoji = false;
                     if (!mEmojiViews.isEmpty()) {
                         selectGridEmoji(EMOJI_OPTIONS[0], mEmojiViews.get(0));
@@ -270,7 +405,6 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         bg.setColor(ColorStateList.valueOf(mAccentColor).withAlpha(50).getDefaultColor());
         bg.setStroke(dpToPx(2), mAccentColor);
 
-        // Clear custom input when selecting from grid
         if (mEmojiCustomInput.getText().length() > 0) {
             mEmojiCustomInput.setText("");
         }
@@ -286,34 +420,7 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         }
     }
 
-    private void launchGatewayLoginFlow() {
-        try {
-            final Intent intent = new Intent(Intent.ACTION_VIEW,
-                    AgentGatewayAuthController.buildAuthStartUri("setupwizard"));
-            intent.addCategory(Intent.CATEGORY_BROWSABLE);
-            startActivity(intent);
-        } catch (Exception e) {
-            Log.w(TAG, "Unable to launch gateway auth", e);
-            Toast.makeText(this, "Unable to open cloud login", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void refreshGatewayAuthStatus() {
-        if (mGatewayAuthStatus == null) {
-            return;
-        }
-        final boolean hasSession = AgentGatewayAuthController.hasStoredSession();
-        final String accountId = AgentGatewayAuthController.getStoredAccountId();
-        if (!hasSession) {
-            mGatewayAuthStatus.setText(R.string.agent_gateway_logged_out);
-            return;
-        }
-        if (TextUtils.isEmpty(accountId)) {
-            mGatewayAuthStatus.setText(R.string.agent_gateway_logged_in);
-            return;
-        }
-        mGatewayAuthStatus.setText(getString(R.string.agent_gateway_logged_in) + " (" + accountId + ")");
-    }
+    // ── Setup wizard navigation ─────────────────────────────────────────
 
     @Override
     protected void onNextPressed() {
@@ -336,7 +443,6 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
                 personality[0], personality[1]);
         final String userMd = buildUserMd(userName, timezone, language, commStyle, userInterests);
 
-        // Primary: write via Settings.Secure (works regardless of SELinux)
         Settings.Secure.putString(getContentResolver(),
                 "agent_wizard_identity", identityMd);
         Settings.Secure.putString(getContentResolver(),

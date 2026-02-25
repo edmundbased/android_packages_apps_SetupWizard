@@ -5,9 +5,12 @@
 
 package org.lineageos.setupwizard;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.SystemProperties;
 import android.text.TextUtils;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,24 +29,22 @@ import java.util.UUID;
 
 /**
  * Shared helper for managed gateway auth during setup wizard.
+ *
+ * Supports two native login flows (no browser-based auth portal):
+ *   1. Email OTP — fully in-app via PrivyAuthClient → auth proxy → Privy
+ *   2. Google OAuth — opens browser for Google consent only, callback returns here
  */
 final class AgentGatewayAuthController {
+    private static final String TAG = "SwGatewayAuth";
+
     private static final String PROP_BASE_URL = "persist.agent.llm_base_url";
     private static final String PROP_API_KEY = "persist.agent.llm_api_key";
     private static final String PROP_API_KEY_SOURCE = "persist.agent.llm_api_key_source";
     private static final String PROP_GATEWAY_REFRESH_TOKEN = "persist.agent.gateway_refresh_token";
     private static final String PROP_GATEWAY_DEVICE_ID = "persist.agent.gateway_device_id";
     private static final String PROP_GATEWAY_ACCOUNT_ID = "persist.agent.gateway_account_id";
-    private static final String PROP_AUTH_URL = "persist.agent.gateway_auth_url";
     private static final String PROP_AUTH_STATE = "persist.agent.gateway_auth_state";
-    private static final String PROP_PRIVY_APP_ID = "persist.agent.privy_app_id";
-    private static final String PROP_PRIVY_CLIENT_ID = "persist.agent.privy_client_id";
-    private static final String PROP_PRIVY_LOGIN_METHODS = "persist.agent.privy_login_methods";
     private static final String DEFAULT_BASE_URL = "https://ai-gateway.vercel.sh/v1";
-    private static final String DEFAULT_PRIVY_APP_ID = "cmc25921q01izle0ms5iojge4";
-    private static final String DEFAULT_PRIVY_CLIENT_ID =
-            "client-WY6MrvJYGhzCEdqwYmPBxu5sEg4s7x6C7ZE98pdwQAWYt";
-    private static final String DEFAULT_PRIVY_LOGIN_METHODS = "email,google";
 
     private static final String RUNTIME_DIR = "/data/misc/agent/runtime";
     private static final String API_KEY_FILE = RUNTIME_DIR + "/llm_api_key";
@@ -69,24 +70,77 @@ final class AgentGatewayAuthController {
     private AgentGatewayAuthController() {
     }
 
-    static Uri buildAuthStartUri(String sourceTag) {
+    // ── Email OTP flow ──────────────────────────────────────────────────
+
+    /** Send OTP to email via the auth proxy. Callback runs on a background thread. */
+    static void sendEmailOtp(String email, PrivyAuthClient.Callback<Void> callback) {
+        PrivyAuthClient.sendEmailOtp(email, callback);
+    }
+
+    /**
+     * Verify email OTP via the auth proxy, then exchange the identity token
+     * for gateway credentials and persist the session.
+     */
+    static void verifyEmailOtp(String email, String code,
+            PrivyAuthClient.Callback<ExchangeResult> callback) {
+        PrivyAuthClient.verifyEmailOtp(email, code, new PrivyAuthClient.Callback<>() {
+            @Override
+            public void onSuccess(PrivyAuthClient.VerifyResult result) {
+                try {
+                    final ExchangeResult exchange = exchangeOrDirect(result.identityToken);
+                    persistSession(exchange);
+                    callback.onSuccess(exchange);
+                } catch (Exception e) {
+                    Log.e(TAG, "Token exchange after email verify failed", e);
+                    callback.onError(e.getMessage());
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                callback.onError(message);
+            }
+        });
+    }
+
+    // ── Google OAuth flow ───────────────────────────────────────────────
+
+    /**
+     * Start Google OAuth: get the OAuth URL from the auth proxy and open it in browser.
+     * The callback will arrive at AgentGatewayAuthCallbackActivity via deep link.
+     */
+    static void initiateGoogleOAuth(Activity activity, String sourceTag) {
         final String state = UUID.randomUUID().toString().replace("-", "");
         SystemProperties.set(PROP_AUTH_STATE, state);
         try {
             writeFile(STATE_FILE, state);
         } catch (IOException ignored) {
         }
-        final Uri.Builder builder = Uri.parse(resolveAuthStartUrl()).buildUpon();
-        builder.appendQueryParameter("redirect_uri", getRedirectUri());
-        builder.appendQueryParameter("state", state);
-        appendIfPresent(builder, "app_id", getPrivyAppId());
-        appendIfPresent(builder, "client_id", getPrivyClientId());
-        appendIfPresent(builder, "login_methods", getPrivyLoginMethods());
-        if (!TextUtils.isEmpty(sourceTag)) {
-            builder.appendQueryParameter("source", sourceTag);
-        }
-        return builder.build();
+
+        final String redirectUri = getRedirectUri();
+        PrivyAuthClient.getOAuthUrl("google", redirectUri, state,
+                new PrivyAuthClient.Callback<>() {
+            @Override
+            public void onSuccess(String oauthUrl) {
+                activity.runOnUiThread(() -> {
+                    try {
+                        final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(oauthUrl));
+                        intent.addCategory(Intent.CATEGORY_BROWSABLE);
+                        activity.startActivity(intent);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to open OAuth URL", e);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                Log.e(TAG, "Failed to get OAuth URL: " + message);
+            }
+        });
     }
+
+    // ── Shared helpers ──────────────────────────────────────────────────
 
     static String getRedirectUri() {
         return CALLBACK_SCHEME + "://" + CALLBACK_HOST + CALLBACK_PATH;
@@ -101,19 +155,17 @@ final class AgentGatewayAuthController {
         return SystemProperties.get(PROP_GATEWAY_ACCOUNT_ID, "");
     }
 
-    static String getPrivyAppId() {
-        final String v = SystemProperties.get(PROP_PRIVY_APP_ID, "").trim();
-        return TextUtils.isEmpty(v) ? DEFAULT_PRIVY_APP_ID : v;
-    }
-
-    static String getPrivyClientId() {
-        final String v = SystemProperties.get(PROP_PRIVY_CLIENT_ID, "").trim();
-        return TextUtils.isEmpty(v) ? DEFAULT_PRIVY_CLIENT_ID : v;
-    }
-
-    static String getPrivyLoginMethods() {
-        final String configured = SystemProperties.get(PROP_PRIVY_LOGIN_METHODS, "").trim();
-        return TextUtils.isEmpty(configured) ? DEFAULT_PRIVY_LOGIN_METHODS : configured;
+    /**
+     * Try exchanging the identity token via the gateway. If the gateway doesn't
+     * support the exchange endpoint, fall back to using the identity token directly.
+     */
+    static ExchangeResult exchangeOrDirect(String identityToken) throws IOException {
+        try {
+            return exchangeIdentityToken(identityToken);
+        } catch (Exception e) {
+            Log.w(TAG, "Gateway exchange failed, using direct auth: " + e.getMessage());
+            return new ExchangeResult(identityToken, identityToken, "");
+        }
     }
 
     static ExchangeResult exchangeIdentityToken(String identityToken)
@@ -168,7 +220,8 @@ final class AgentGatewayAuthController {
         SystemProperties.set(PROP_API_KEY, "");
         SystemProperties.set(PROP_GATEWAY_REFRESH_TOKEN, "");
         SystemProperties.set(PROP_GATEWAY_DEVICE_ID, "");
-        SystemProperties.set(PROP_GATEWAY_ACCOUNT_ID, result.accountId != null ? result.accountId : "");
+        SystemProperties.set(PROP_GATEWAY_ACCOUNT_ID,
+                result.accountId != null ? result.accountId : "");
     }
 
     static boolean validateAndConsumeState(String callbackState) {
@@ -184,21 +237,6 @@ final class AgentGatewayAuthController {
             return true;
         }
         return !TextUtils.isEmpty(expectedPropState) && returnedState.equals(expectedPropState);
-    }
-
-    private static void appendIfPresent(Uri.Builder builder, String key, String value) {
-        if (builder == null || TextUtils.isEmpty(key) || TextUtils.isEmpty(value)) {
-            return;
-        }
-        builder.appendQueryParameter(key, value);
-    }
-
-    private static String resolveAuthStartUrl() {
-        final String explicit = SystemProperties.get(PROP_AUTH_URL, "").trim();
-        if (!TextUtils.isEmpty(explicit)) {
-            return explicit;
-        }
-        return resolveGatewayApiRoot() + "/auth/privy/start";
     }
 
     private static String resolveGatewayApiRoot() {
