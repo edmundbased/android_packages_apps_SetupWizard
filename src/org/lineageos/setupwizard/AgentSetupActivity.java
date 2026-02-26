@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 The GrandiOS Project
+ * SPDX-FileCopyrightText: 2026 The BasedOS Project
  * SPDX-License-Identifier: Apache-2.0
  */
 

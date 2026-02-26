@@ -309,7 +309,7 @@
                 <data
                     android:host="auth"
                     android:path="/callback"
-                    android:scheme="grandios-setup" />
+                    android:scheme="basedos-setup" />
             </intent-filter>
         </activity>
 

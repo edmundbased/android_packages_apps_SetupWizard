@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2026 The GrandiOS Project
+ * SPDX-FileCopyrightText: 2026 The BasedOS Project
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -51,7 +51,7 @@ final class AgentGatewayAuthController {
     private static final String REFRESH_FILE = RUNTIME_DIR + "/gateway_refresh_token";
     private static final String STATE_FILE = RUNTIME_DIR + "/gateway_auth_state";
 
-    static final String CALLBACK_SCHEME = "grandios-setup";
+    static final String CALLBACK_SCHEME = "basedos-setup";
     static final String CALLBACK_HOST = "auth";
     static final String CALLBACK_PATH = "/callback";
 
