@@ -31,6 +31,7 @@ import com.android.settingslib.Utils;
 import com.basedos.privybridge.PrivyBridge;
 import com.basedos.privybridge.PrivyBridgeCallback;
 import com.basedos.privybridge.PrivyBridgeResult;
+import com.basedos.privybridge.PrivyBridgeConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -219,6 +220,26 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         refreshGatewayAuthStatus();
     }
 
+    /**
+     * Lazily initialize PrivyBridge. SetupWizard runs as UID 1000 (system),
+     * where WebView is blocked. If the Privy SDK tries to create a WebView
+     * during init, we catch the exception and disable Privy-based auth.
+     */
+    private boolean ensurePrivyInitialized() {
+        if (PrivyBridge.isInitialized()) {
+            return true;
+        }
+        try {
+            PrivyBridgeConfig config =
+                    PrivyBridgeConfig.fromSystemProperties("basedos-setup");
+            PrivyBridge.init(this, config);
+            return true;
+        } catch (Exception e) {
+            Log.w(TAG, "Cannot init PrivyBridge (WebView blocked in system process)", e);
+            return false;
+        }
+    }
+
     // ── Gateway Email OTP (via Privy SDK) ───────────────────────────────
 
     private void sendEmailCode() {
@@ -231,6 +252,13 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         mGatewaySendCodeButton.setEnabled(false);
         mGatewaySendCodeButton.setText("Sending\u2026");
 
+        if (!ensurePrivyInitialized()) {
+            Toast.makeText(this, "Auth not available yet — try again later",
+                    Toast.LENGTH_LONG).show();
+            mGatewaySendCodeButton.setEnabled(true);
+            mGatewaySendCodeButton.setText(R.string.agent_gateway_send_code);
+            return;
+        }
         PrivyBridge.getInstance().sendEmailOtp(email, new PrivyBridgeCallback<>() {
             @Override
             public void onSuccess(Void result) {
@@ -267,6 +295,11 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         mGatewayVerifyCodeButton.setEnabled(false);
         mGatewayVerifyCodeButton.setText("Verifying\u2026");
 
+        if (!ensurePrivyInitialized()) {
+            mGatewayVerifyCodeButton.setEnabled(true);
+            mGatewayVerifyCodeButton.setText(R.string.agent_gateway_verify_code);
+            return;
+        }
         PrivyBridge.getInstance().loginWithEmailOtp(email, code,
                 new PrivyBridgeCallback<>() {
             @Override
@@ -291,6 +324,12 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
     private void launchGoogleLogin() {
         mGatewayGoogleLoginButton.setEnabled(false);
 
+        if (!ensurePrivyInitialized()) {
+            mGatewayGoogleLoginButton.setEnabled(true);
+            Toast.makeText(this, "Auth not available yet — try again later",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
         PrivyBridge.getInstance().loginWithOAuth("google",
                 new PrivyBridgeCallback<>() {
             @Override

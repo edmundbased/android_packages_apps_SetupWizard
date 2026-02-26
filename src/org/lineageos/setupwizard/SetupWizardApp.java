@@ -14,8 +14,6 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 
-import com.basedos.privybridge.PrivyBridge;
-import com.basedos.privybridge.PrivyBridgeConfig;
 
 import org.lineageos.setupwizard.util.SetupWizardUtils;
 
@@ -68,10 +66,9 @@ public class SetupWizardApp extends Application {
         sStatusBarManager = SetupWizardUtils.disableStatusBar(this);
         mHandler.postDelayed(mRadioTimeoutRunnable, SetupWizardApp.RADIO_READY_TIMEOUT);
 
-        // Initialize Privy SDK for gateway authentication
-        PrivyBridgeConfig privyConfig =
-                PrivyBridgeConfig.fromSystemProperties("basedos-setup");
-        PrivyBridge.init(this, privyConfig);
+        // NOTE: PrivyBridge cannot be initialized here because SetupWizard
+        // runs as UID 1000 (system) and Android blocks WebView in privileged
+        // processes. Privy auth is handled lazily in AgentSetupActivity.
         if (SetupWizardUtils.hasGMS(this)) {
             SetupWizardUtils.disableHome(this);
             if (SetupWizardUtils.isOwner()) {
