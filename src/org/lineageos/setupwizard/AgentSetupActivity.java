@@ -28,6 +28,9 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 
 import com.android.settingslib.Utils;
+import com.basedos.privybridge.PrivyBridge;
+import com.basedos.privybridge.PrivyBridgeCallback;
+import com.basedos.privybridge.PrivyBridgeResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -216,7 +219,7 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         refreshGatewayAuthStatus();
     }
 
-    // ── Gateway Email OTP ───────────────────────────────────────────────
+    // ── Gateway Email OTP (via Privy SDK) ───────────────────────────────
 
     private void sendEmailCode() {
         final String email = mGatewayEmailInput.getText().toString().trim();
@@ -228,7 +231,7 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         mGatewaySendCodeButton.setEnabled(false);
         mGatewaySendCodeButton.setText("Sending\u2026");
 
-        AgentGatewayAuthController.sendEmailOtp(email, new PrivyAuthClient.Callback<>() {
+        PrivyBridge.getInstance().sendEmailOtp(email, new PrivyBridgeCallback<>() {
             @Override
             public void onSuccess(Void result) {
                 runOnUiThread(() -> {
@@ -241,7 +244,7 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
             }
 
             @Override
-            public void onError(String message) {
+            public void onError(String errorCode, String message) {
                 runOnUiThread(() -> {
                     mGatewaySendCodeButton.setEnabled(true);
                     mGatewaySendCodeButton.setText(R.string.agent_gateway_send_code);
@@ -264,22 +267,15 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         mGatewayVerifyCodeButton.setEnabled(false);
         mGatewayVerifyCodeButton.setText("Verifying\u2026");
 
-        AgentGatewayAuthController.verifyEmailOtp(email, code,
-                new PrivyAuthClient.Callback<>() {
+        PrivyBridge.getInstance().loginWithEmailOtp(email, code,
+                new PrivyBridgeCallback<>() {
             @Override
-            public void onSuccess(AgentGatewayAuthController.ExchangeResult result) {
-                Settings.Secure.putInt(getContentResolver(), "agent_gateway_logged_in", 1);
-                runOnUiThread(() -> {
-                    mGatewayVerifyCodeButton.setEnabled(true);
-                    mGatewayVerifyCodeButton.setText(R.string.agent_gateway_verify_code);
-                    refreshGatewayAuthStatus();
-                    Toast.makeText(AgentSetupActivity.this,
-                            "Signed in", Toast.LENGTH_SHORT).show();
-                });
+            public void onSuccess(PrivyBridgeResult result) {
+                onPrivyLoginSuccess(result);
             }
 
             @Override
-            public void onError(String message) {
+            public void onError(String errorCode, String message) {
                 runOnUiThread(() -> {
                     mGatewayVerifyCodeButton.setEnabled(true);
                     mGatewayVerifyCodeButton.setText(R.string.agent_gateway_verify_code);
@@ -290,13 +286,75 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         });
     }
 
-    // ── Google OAuth ────────────────────────────────────────────────────
+    // ── Google OAuth (via Privy SDK) ─────────────────────────────────────
 
     private void launchGoogleLogin() {
         mGatewayGoogleLoginButton.setEnabled(false);
-        AgentGatewayAuthController.initiateGoogleOAuth(this, "setupwizard");
-        mGatewayGoogleLoginButton.postDelayed(() -> mGatewayGoogleLoginButton.setEnabled(true),
-                2000);
+
+        PrivyBridge.getInstance().loginWithOAuth("google",
+                new PrivyBridgeCallback<>() {
+            @Override
+            public void onSuccess(PrivyBridgeResult result) {
+                onPrivyLoginSuccess(result);
+            }
+
+            @Override
+            public void onError(String errorCode, String message) {
+                runOnUiThread(() -> {
+                    mGatewayGoogleLoginButton.setEnabled(true);
+                    Toast.makeText(AgentSetupActivity.this,
+                            "Sign-in failed: " + message, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    // ── Privy login success handler ──────────────────────────────────────
+
+    private void onPrivyLoginSuccess(PrivyBridgeResult result) {
+        Log.i(TAG, "Privy login success: userId=" + result.userId
+                + ", email=" + result.email);
+
+        // Persist Privy user info to Settings.Secure for AgentConsoleApp
+        Settings.Secure.putInt(getContentResolver(), "agent_gateway_logged_in", 1);
+        if (result.userId != null) {
+            Settings.Secure.putString(getContentResolver(),
+                    "agent_privy_user_id", result.userId);
+        }
+        if (result.email != null) {
+            Settings.Secure.putString(getContentResolver(),
+                    "agent_privy_email", result.email);
+        }
+
+        // Persist identity token to shared file for gateway exchange
+        if (result.hasIdentityToken()) {
+            persistTokenToFile(result.identityToken);
+        }
+
+        runOnUiThread(() -> {
+            mGatewayVerifyCodeButton.setEnabled(true);
+            mGatewayVerifyCodeButton.setText(R.string.agent_gateway_verify_code);
+            mGatewayGoogleLoginButton.setEnabled(true);
+            refreshGatewayAuthStatus();
+            Toast.makeText(AgentSetupActivity.this,
+                    "Signed in", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void persistTokenToFile(String token) {
+        final String dir = "/data/misc/agent/runtime";
+        final String file = dir + "/llm_api_key";
+        try {
+            new java.io.File(dir).mkdirs();
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(file)) {
+                fos.write(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+            new java.io.File(file).setReadable(true, false);
+            android.os.SystemProperties.set("persist.agent.llm_api_key_source", "file");
+            Log.i(TAG, "Persisted identity token to " + file);
+        } catch (java.io.IOException e) {
+            Log.e(TAG, "Failed to persist token", e);
+        }
     }
 
     // ── Gateway status ──────────────────────────────────────────────────
@@ -305,18 +363,22 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         if (mGatewayAuthStatus == null) {
             return;
         }
-        final boolean hasSession = AgentGatewayAuthController.hasStoredSession();
-        final String accountId = AgentGatewayAuthController.getStoredAccountId();
-        if (!hasSession) {
+        final boolean hasSession = PrivyBridge.isInitialized()
+                && PrivyBridge.getInstance().isAuthenticated();
+        final boolean hasStoredToken = new java.io.File(
+                "/data/misc/agent/runtime/llm_api_key").exists();
+        if (!hasSession && !hasStoredToken) {
             mGatewayAuthStatus.setText(R.string.agent_gateway_logged_out);
             setLoginUiVisible(true);
             return;
         }
-        if (TextUtils.isEmpty(accountId)) {
-            mGatewayAuthStatus.setText(R.string.agent_gateway_logged_in);
-        } else {
+        final PrivyBridgeResult user = hasSession
+                ? PrivyBridge.getInstance().getCurrentUser() : null;
+        if (user != null && user.email != null) {
             mGatewayAuthStatus.setText(getString(R.string.agent_gateway_logged_in)
-                    + " (" + accountId + ")");
+                    + " (" + user.email + ")");
+        } else {
+            mGatewayAuthStatus.setText(R.string.agent_gateway_logged_in);
         }
         setLoginUiVisible(false);
     }

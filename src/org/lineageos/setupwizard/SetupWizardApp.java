@@ -14,6 +14,9 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 
+import com.basedos.privybridge.PrivyBridge;
+import com.basedos.privybridge.PrivyBridgeConfig;
+
 import org.lineageos.setupwizard.util.SetupWizardUtils;
 
 public class SetupWizardApp extends Application {
@@ -64,6 +67,11 @@ public class SetupWizardApp extends Application {
         }
         sStatusBarManager = SetupWizardUtils.disableStatusBar(this);
         mHandler.postDelayed(mRadioTimeoutRunnable, SetupWizardApp.RADIO_READY_TIMEOUT);
+
+        // Initialize Privy SDK for gateway authentication
+        PrivyBridgeConfig privyConfig =
+                PrivyBridgeConfig.fromSystemProperties("basedos-setup");
+        PrivyBridge.init(this, privyConfig);
         if (SetupWizardUtils.hasGMS(this)) {
             SetupWizardUtils.disableHome(this);
             if (SetupWizardUtils.isOwner()) {

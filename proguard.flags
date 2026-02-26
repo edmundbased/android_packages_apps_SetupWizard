@@ -14,3 +14,10 @@
 # Needed when building against the Marshmallow SDK
 -dontwarn org.apache.http.**
 -dontwarn androidx.**
+
+# Privy SDK and dependencies (via PrivyBridge)
+-keep class io.privy.** { *; }
+-keep class io.ktor.** { *; }
+-keep class kotlinx.serialization.** { *; }
+-dontwarn io.privy.**
+-dontwarn io.ktor.**

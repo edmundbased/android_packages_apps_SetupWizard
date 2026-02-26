@@ -27,6 +27,7 @@ android_app {
         "setupdesign",
         "SystemUISharedLib",
         "org.lineageos.platform.internal",
+        "PrivyBridge",
     ],
 
     libs: ["telephony-common"],

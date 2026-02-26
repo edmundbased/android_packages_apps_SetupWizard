@@ -295,21 +295,17 @@
             </intent-filter>
         </activity>
 
+        <!-- Privy SDK OAuth redirect handler -->
         <activity
-            android:name=".AgentGatewayAuthCallbackActivity"
-            android:excludeFromRecents="true"
+            android:name="io.privy.sdk.oAuth.PrivyRedirectActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:noHistory="true"
             android:theme="@style/NoDisplay">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:host="auth"
-                    android:path="/callback"
-                    android:scheme="basedos-setup" />
+                <data android:scheme="basedos-setup" />
             </intent-filter>
         </activity>
 
