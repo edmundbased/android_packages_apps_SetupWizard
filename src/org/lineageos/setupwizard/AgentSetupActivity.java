@@ -365,9 +365,21 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
                     "agent_privy_email", result.email);
         }
 
-        // Persist identity token to shared file for gateway exchange
+        // Exchange identity token for gateway access + refresh tokens
         if (result.hasIdentityToken()) {
-            persistTokenToFile(result.identityToken);
+            try {
+                final AgentGatewayAuthController.ExchangeResult exchange =
+                        AgentGatewayAuthController.exchangeOrDirect(
+                                result.identityToken);
+                AgentGatewayAuthController.persistSession(exchange);
+                Log.i(TAG, "Gateway session persisted after Privy login");
+            } catch (Exception e) {
+                Log.e(TAG, "Gateway token exchange failed", e);
+                runOnUiThread(() -> Toast.makeText(AgentSetupActivity.this,
+                        "Gateway login failed: " + e.getMessage(),
+                        Toast.LENGTH_LONG).show());
+                return;
+            }
         }
 
         runOnUiThread(() -> {
@@ -378,22 +390,6 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
             Toast.makeText(AgentSetupActivity.this,
                     "Signed in", Toast.LENGTH_SHORT).show();
         });
-    }
-
-    private void persistTokenToFile(String token) {
-        final String dir = "/data/misc/agent/runtime";
-        final String file = dir + "/llm_api_key";
-        try {
-            new java.io.File(dir).mkdirs();
-            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(file)) {
-                fos.write(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            }
-            new java.io.File(file).setReadable(true, false);
-            android.os.SystemProperties.set("persist.agent.llm_api_key_source", "file");
-            Log.i(TAG, "Persisted identity token to " + file);
-        } catch (java.io.IOException e) {
-            Log.e(TAG, "Failed to persist token", e);
-        }
     }
 
     // ── Gateway status ──────────────────────────────────────────────────
