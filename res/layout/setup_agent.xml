@@ -31,196 +31,240 @@
                     android:orientation="vertical"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingLeft="@dimen/content_margin_left"
-                    android:paddingRight="@dimen/content_margin_right">
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingBottom="8dp">
 
-                    <!-- Agent name -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/agent_name_label"
-                        android:textAppearance="?android:attr/textAppearanceMedium"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="4dp" />
-
-                    <EditText
-                        android:id="@+id/agent_name_input"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="@string/agent_default_name"
-                        android:inputType="textPersonName"
-                        android:maxLines="1"
-                        android:imeOptions="actionNext" />
-
-                    <!-- Creature / nature -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/agent_creature_label"
-                        android:textAppearance="?android:attr/textAppearanceMedium"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="4dp" />
-
-                    <EditText
-                        android:id="@+id/agent_creature_input"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="@string/agent_creature_hint"
-                        android:inputType="textShortMessage"
-                        android:maxLines="1"
-                        android:imeOptions="actionNext" />
-
-                    <!-- Personality -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/agent_personality_label"
-                        android:textAppearance="?android:attr/textAppearanceMedium"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="4dp" />
-
-                    <RadioGroup
-                        android:id="@+id/personality_radio_group"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <RadioButton
-                            android:id="@+id/radio_casual"
-                            android:text="@string/personality_casual"
-                            android:checked="true"
-                            style="@style/SudRadioButton" />
-
-                        <RadioButton
-                            android:id="@+id/radio_professional"
-                            android:text="@string/personality_professional"
-                            style="@style/SudRadioButton" />
-
-                        <RadioButton
-                            android:id="@+id/radio_warm"
-                            android:text="@string/personality_warm"
-                            style="@style/SudRadioButton" />
-
-                        <RadioButton
-                            android:id="@+id/radio_playful"
-                            android:text="@string/personality_playful"
-                            style="@style/SudRadioButton" />
-
-                    </RadioGroup>
-
-                    <!-- Signature emoji (popup picker) -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/agent_emoji_label"
-                        android:textAppearance="?android:attr/textAppearanceMedium"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="4dp" />
-
+                    <!-- ============================================ -->
+                    <!-- Card 1: Your Assistant                       -->
+                    <!-- ============================================ -->
                     <LinearLayout
-                        android:id="@+id/emoji_picker_trigger"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:background="?android:attr/selectableItemBackground"
-                        android:padding="8dp"
-                        android:layout_marginBottom="8dp">
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_card_subtle"
+                        android:padding="16dp"
+                        android:layout_marginTop="8dp">
 
+                        <!-- Agent name -->
                         <TextView
-                            android:id="@+id/selected_emoji_display"
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:textSize="36sp" />
+                            android:text="@string/agent_name_label"
+                            android:textAppearance="?android:attr/textAppearanceMedium"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginBottom="6dp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <EditText
+                            android:id="@+id/agent_name_input"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/agent_emoji_tap_to_change"
-                            android:textAppearance="?android:attr/textAppearanceSmall"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:layout_marginStart="12dp" />
+                            android:background="@drawable/bg_input_outlined"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp"
+                            android:hint="@string/agent_default_name"
+                            android:inputType="textPersonName"
+                            android:maxLines="1"
+                            android:imeOptions="actionNext" />
+
+                        <!-- Creature / nature -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/agent_creature_label"
+                            android:textAppearance="?android:attr/textAppearanceMedium"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginTop="16dp"
+                            android:layout_marginBottom="6dp" />
+
+                        <EditText
+                            android:id="@+id/agent_creature_input"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_input_outlined"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp"
+                            android:hint="@string/agent_creature_hint"
+                            android:inputType="textShortMessage"
+                            android:maxLines="1"
+                            android:imeOptions="actionNext" />
+
+                        <!-- Personality -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/agent_personality_label"
+                            android:textAppearance="?android:attr/textAppearanceMedium"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginTop="16dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <RadioGroup
+                            android:id="@+id/personality_radio_group"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <RadioButton
+                                android:id="@+id/radio_casual"
+                                android:text="@string/personality_casual"
+                                android:checked="true"
+                                style="@style/SudRadioButton" />
+
+                            <RadioButton
+                                android:id="@+id/radio_professional"
+                                android:text="@string/personality_professional"
+                                style="@style/SudRadioButton" />
+
+                            <RadioButton
+                                android:id="@+id/radio_warm"
+                                android:text="@string/personality_warm"
+                                style="@style/SudRadioButton" />
+
+                            <RadioButton
+                                android:id="@+id/radio_playful"
+                                android:text="@string/personality_playful"
+                                style="@style/SudRadioButton" />
+
+                        </RadioGroup>
+
+                        <!-- Signature emoji (popup picker trigger) -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/agent_emoji_label"
+                            android:textAppearance="?android:attr/textAppearanceMedium"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginTop="16dp"
+                            android:layout_marginBottom="6dp" />
+
+                        <LinearLayout
+                            android:id="@+id/emoji_picker_trigger"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="@drawable/bg_emoji_trigger_card"
+                            android:paddingTop="16dp"
+                            android:paddingBottom="16dp">
+
+                            <TextView
+                                android:id="@+id/selected_emoji_display"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="48sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/agent_emoji_tap_to_change"
+                                android:textAppearance="?android:attr/textAppearanceSmall"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:layout_marginTop="4dp" />
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
-                    <!-- User name -->
-                    <TextView
+                    <!-- ============================================ -->
+                    <!-- Card 2: About You                            -->
+                    <!-- ============================================ -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/user_name_label"
-                        android:textAppearance="?android:attr/textAppearanceMedium"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="4dp" />
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_card_subtle"
+                        android:padding="16dp"
+                        android:layout_marginTop="16dp">
 
-                    <EditText
-                        android:id="@+id/user_name_input"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="@string/user_name_hint"
-                        android:inputType="textPersonName"
-                        android:maxLines="1"
-                        android:imeOptions="actionNext" />
+                        <!-- User name -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/user_name_label"
+                            android:textAppearance="?android:attr/textAppearanceMedium"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginBottom="6dp" />
 
-                    <!-- What matters to you -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/user_interests_label"
-                        android:textAppearance="?android:attr/textAppearanceMedium"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="4dp" />
+                        <EditText
+                            android:id="@+id/user_name_input"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_input_outlined"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp"
+                            android:hint="@string/user_name_hint"
+                            android:inputType="textPersonName"
+                            android:maxLines="1"
+                            android:imeOptions="actionNext" />
 
-                    <EditText
-                        android:id="@+id/user_interests_input"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="@string/user_interests_hint"
-                        android:inputType="textMultiLine"
-                        android:minLines="2"
-                        android:maxLines="4"
-                        android:gravity="top|start"
-                        android:imeOptions="actionNext" />
+                        <!-- What matters to you -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/user_interests_label"
+                            android:textAppearance="?android:attr/textAppearanceMedium"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginTop="16dp"
+                            android:layout_marginBottom="6dp" />
 
-                    <!-- Response style -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/response_style_label"
-                        android:textAppearance="?android:attr/textAppearanceMedium"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="4dp" />
+                        <EditText
+                            android:id="@+id/user_interests_input"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_input_outlined"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp"
+                            android:hint="@string/user_interests_hint"
+                            android:inputType="textMultiLine"
+                            android:minLines="2"
+                            android:maxLines="4"
+                            android:gravity="top|start"
+                            android:imeOptions="actionNext" />
 
-                    <RadioGroup
-                        android:id="@+id/response_style_radio_group"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp">
+                        <!-- Response style -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/response_style_label"
+                            android:textAppearance="?android:attr/textAppearanceMedium"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginTop="16dp"
+                            android:layout_marginBottom="4dp" />
 
-                        <RadioButton
-                            android:id="@+id/radio_style_brief"
-                            android:text="@string/style_brief"
-                            style="@style/SudRadioButton" />
+                        <RadioGroup
+                            android:id="@+id/response_style_radio_group"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
 
-                        <RadioButton
-                            android:id="@+id/radio_style_detailed"
-                            android:text="@string/style_detailed"
-                            style="@style/SudRadioButton" />
+                            <RadioButton
+                                android:id="@+id/radio_style_brief"
+                                android:text="@string/style_brief"
+                                style="@style/SudRadioButton" />
 
-                        <RadioButton
-                            android:id="@+id/radio_style_match"
-                            android:text="@string/style_match"
-                            android:checked="true"
-                            style="@style/SudRadioButton" />
+                            <RadioButton
+                                android:id="@+id/radio_style_detailed"
+                                android:text="@string/style_detailed"
+                                style="@style/SudRadioButton" />
 
-                    </RadioGroup>
+                            <RadioButton
+                                android:id="@+id/radio_style_match"
+                                android:text="@string/style_match"
+                                android:checked="true"
+                                style="@style/SudRadioButton" />
+
+                        </RadioGroup>
+
+                    </LinearLayout>
 
                 </LinearLayout>
             </ScrollView>

@@ -113,8 +113,9 @@
     <string name="agent_gateway_send_code">Send Code</string>
     <string name="agent_gateway_otp_hint">6-digit code</string>
     <string name="agent_gateway_verify_code">Verify</string>
-    <string name="agent_gateway_google_login">Sign In with Google</string>
+    <string name="agent_gateway_google_login">Sign in with Google</string>
     <string name="agent_gateway_code_sent">Code sent! Check your email.</string>
+    <string name="agent_gateway_signed_in_as">Signed in as</string>
 
     <!-- Theme page -->
     <string name="setup_theme">Theme</string>

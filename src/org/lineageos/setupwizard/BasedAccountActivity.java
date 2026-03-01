@@ -8,10 +8,11 @@ package org.lineageos.setupwizard;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.text.Editable;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -30,13 +31,17 @@ public class BasedAccountActivity extends BaseSetupWizardActivity {
     private static final String TAG = "BasedAccount";
 
     private TextView mGatewayAuthStatus;
-    private LinearLayout mGatewayEmailRow;
+    private LinearLayout mGatewayLoginForm;
     private EditText mGatewayEmailInput;
     private Button mGatewaySendCodeButton;
     private LinearLayout mGatewayOtpRow;
     private EditText mGatewayOtpInput;
     private Button mGatewayVerifyCodeButton;
     private Button mGatewayGoogleLoginButton;
+    private LinearLayout mGatewayOrDivider;
+    private LinearLayout mGatewaySuccessContainer;
+    private TextView mGatewaySuccessLabel;
+    private TextView mGatewaySuccessEmail;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -50,13 +55,17 @@ public class BasedAccountActivity extends BaseSetupWizardActivity {
         }
 
         mGatewayAuthStatus = findViewById(R.id.gateway_auth_status);
-        mGatewayEmailRow = findViewById(R.id.gateway_email_row);
+        mGatewayLoginForm = findViewById(R.id.gateway_login_form);
         mGatewayEmailInput = findViewById(R.id.gateway_email_input);
         mGatewaySendCodeButton = findViewById(R.id.gateway_send_code_button);
         mGatewayOtpRow = findViewById(R.id.gateway_otp_row);
         mGatewayOtpInput = findViewById(R.id.gateway_otp_input);
         mGatewayVerifyCodeButton = findViewById(R.id.gateway_verify_code_button);
         mGatewayGoogleLoginButton = findViewById(R.id.gateway_google_login_button);
+        mGatewayOrDivider = findViewById(R.id.gateway_or_divider);
+        mGatewaySuccessContainer = findViewById(R.id.gateway_success_container);
+        mGatewaySuccessLabel = findViewById(R.id.gateway_success_label);
+        mGatewaySuccessEmail = findViewById(R.id.gateway_success_email);
 
         mGatewaySendCodeButton.setOnClickListener(v -> sendEmailCode());
         mGatewayVerifyCodeButton.setOnClickListener(v -> verifyEmailCode());
@@ -114,7 +123,7 @@ public class BasedAccountActivity extends BaseSetupWizardActivity {
             @Override
             public void onSuccess(Void result) {
                 runOnUiThread(() -> {
-                    mGatewayOtpRow.setVisibility(View.VISIBLE);
+                    revealOtpRow();
                     mGatewaySendCodeButton.setEnabled(true);
                     mGatewaySendCodeButton.setText(R.string.agent_gateway_send_code);
                     mGatewayAuthStatus.setText(R.string.agent_gateway_code_sent);
@@ -241,6 +250,23 @@ public class BasedAccountActivity extends BaseSetupWizardActivity {
         });
     }
 
+    // -- OTP row animation --
+
+    private void revealOtpRow() {
+        if (mGatewayOtpRow.getVisibility() == View.VISIBLE) {
+            return;
+        }
+        mGatewayOtpRow.setAlpha(0f);
+        mGatewayOtpRow.setTranslationY(dpToPx(-12));
+        mGatewayOtpRow.setVisibility(View.VISIBLE);
+        mGatewayOtpRow.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(250)
+                .setInterpolator(new DecelerateInterpolator())
+                .start();
+    }
+
     // -- Gateway status --
 
     private void refreshGatewayAuthStatus() {
@@ -259,21 +285,44 @@ public class BasedAccountActivity extends BaseSetupWizardActivity {
         final PrivyBridgeResult user = hasSession
                 ? PrivyBridge.getInstance().getCurrentUser() : null;
         if (user != null && user.email != null) {
-            mGatewayAuthStatus.setText(getString(R.string.agent_gateway_logged_in)
-                    + " (" + user.email + ")");
+            mGatewayAuthStatus.setText(getString(R.string.agent_gateway_logged_in));
+            showSuccessState(user.email);
         } else {
             mGatewayAuthStatus.setText(R.string.agent_gateway_logged_in);
+            showSuccessState(null);
         }
         setLoginUiVisible(false);
     }
 
     private void setLoginUiVisible(boolean visible) {
         final int vis = visible ? View.VISIBLE : View.GONE;
-        if (mGatewayEmailRow != null) mGatewayEmailRow.setVisibility(vis);
-        if (mGatewayGoogleLoginButton != null) mGatewayGoogleLoginButton.setVisibility(vis);
+        if (mGatewayLoginForm != null) mGatewayLoginForm.setVisibility(vis);
         if (!visible && mGatewayOtpRow != null) {
             mGatewayOtpRow.setVisibility(View.GONE);
         }
+        if (mGatewaySuccessContainer != null) {
+            mGatewaySuccessContainer.setVisibility(visible ? View.GONE : View.VISIBLE);
+        }
+    }
+
+    private void showSuccessState(@Nullable String email) {
+        if (mGatewaySuccessContainer == null) {
+            return;
+        }
+        mGatewaySuccessContainer.setVisibility(View.VISIBLE);
+        if (mGatewaySuccessEmail != null) {
+            if (email != null) {
+                mGatewaySuccessEmail.setText(email);
+                mGatewaySuccessEmail.setVisibility(View.VISIBLE);
+            } else {
+                mGatewaySuccessEmail.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    private int dpToPx(int dp) {
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp,
+                getResources().getDisplayMetrics());
     }
 
     @Override

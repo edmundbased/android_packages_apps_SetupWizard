@@ -31,8 +31,8 @@
                     android:orientation="vertical"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingLeft="@dimen/content_margin_left"
-                    android:paddingRight="@dimen/content_margin_right">
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp">
 
                     <!-- Based logo -->
                     <ImageView
@@ -40,7 +40,7 @@
                         android:layout_height="36dp"
                         android:layout_gravity="center_horizontal"
                         android:layout_marginTop="24dp"
-                        android:layout_marginBottom="32dp"
+                        android:layout_marginBottom="24dp"
                         android:src="@drawable/ic_based_logo"
                         android:contentDescription="@string/os_name" />
 
@@ -55,101 +55,162 @@
                         android:gravity="center"
                         android:layout_marginBottom="24dp" />
 
-                    <!-- Email OTP row -->
+                    <!-- Login form container (hidden when logged in) -->
                     <LinearLayout
-                        android:id="@+id/gateway_email_row"
+                        android:id="@+id/gateway_login_form"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="8dp">
+                        android:orientation="vertical">
 
+                        <!-- Email input (full width, outlined) -->
                         <EditText
                             android:id="@+id/gateway_email_input"
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_input_outlined"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:paddingTop="14dp"
+                            android:paddingBottom="14dp"
                             android:hint="@string/agent_gateway_email_hint"
                             android:inputType="textEmailAddress"
                             android:maxLines="1"
-                            android:imeOptions="actionNext" />
+                            android:imeOptions="actionNext"
+                            android:layout_marginBottom="12dp" />
 
+                        <!-- Send Code button (full width, secondary) -->
                         <Button
                             android:id="@+id/gateway_send_code_button"
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/agent_gateway_send_code" />
-                    </LinearLayout>
+                            android:text="@string/agent_gateway_send_code"
+                            android:layout_marginBottom="8dp"
+                            style="@style/SudGlifButton.Secondary" />
 
-                    <!-- OTP verify row (hidden until code sent) -->
-                    <LinearLayout
-                        android:id="@+id/gateway_otp_row"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:visibility="gone"
-                        android:layout_marginBottom="8dp">
-
-                        <EditText
-                            android:id="@+id/gateway_otp_input"
-                            android:layout_width="0dp"
+                        <!-- OTP verify section (hidden until code sent) -->
+                        <LinearLayout
+                            android:id="@+id/gateway_otp_row"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="8dp"
-                            android:hint="@string/agent_gateway_otp_hint"
-                            android:inputType="number"
-                            android:maxLength="6"
-                            android:maxLines="1"
-                            android:imeOptions="actionDone" />
+                            android:orientation="vertical"
+                            android:visibility="gone">
 
+                            <!-- OTP input (full width, outlined) -->
+                            <EditText
+                                android:id="@+id/gateway_otp_input"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_input_outlined"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="16dp"
+                                android:paddingTop="14dp"
+                                android:paddingBottom="14dp"
+                                android:hint="@string/agent_gateway_otp_hint"
+                                android:inputType="number"
+                                android:maxLength="6"
+                                android:maxLines="1"
+                                android:imeOptions="actionDone"
+                                android:layout_marginBottom="12dp" />
+
+                            <!-- Verify button (full width, primary) -->
+                            <Button
+                                android:id="@+id/gateway_verify_code_button"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/agent_gateway_verify_code"
+                                android:layout_marginBottom="8dp"
+                                style="@style/SudGlifButton.Primary" />
+
+                        </LinearLayout>
+
+                        <!-- Divider with pill "or" badge -->
+                        <LinearLayout
+                            android:id="@+id/gateway_or_divider"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="16dp">
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_weight="1"
+                                android:background="?android:attr/listDivider" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/based_account_or"
+                                android:background="@drawable/bg_or_pill"
+                                android:textAppearance="?android:attr/textAppearanceSmall"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:paddingTop="4dp"
+                                android:paddingBottom="4dp"
+                                android:layout_marginStart="12dp"
+                                android:layout_marginEnd="12dp" />
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_weight="1"
+                                android:background="?android:attr/listDivider" />
+
+                        </LinearLayout>
+
+                        <!-- Google Sign-In button (branded, with G icon) -->
                         <Button
-                            android:id="@+id/gateway_verify_code_button"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/agent_gateway_verify_code" />
+                            android:id="@+id/gateway_google_login_button"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_google_button"
+                            android:drawableStart="@drawable/ic_google_logo"
+                            android:drawablePadding="12dp"
+                            android:text="@string/agent_gateway_google_login"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textAllCaps="false"
+                            android:gravity="center"
+                            android:layout_marginBottom="16dp" />
+
                     </LinearLayout>
 
-                    <!-- Divider with "or" label -->
+                    <!-- Success container (shown when logged in) -->
                     <LinearLayout
+                        android:id="@+id/gateway_success_container"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="16dp">
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:padding="32dp"
+                        android:visibility="gone">
 
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="1dp"
-                            android:layout_weight="1"
-                            android:background="?android:attr/listDivider" />
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_check_circle"
+                            android:contentDescription="@string/agent_gateway_logged_in" />
 
                         <TextView
+                            android:id="@+id/gateway_success_label"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/based_account_or"
+                            android:text="@string/agent_gateway_logged_in"
+                            android:textAppearance="?android:attr/textAppearanceMedium"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:layout_marginTop="12dp" />
+
+                        <TextView
+                            android:id="@+id/gateway_success_email"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
                             android:textAppearance="?android:attr/textAppearanceSmall"
                             android:textColor="?android:attr/textColorSecondary"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp" />
-
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="1dp"
-                            android:layout_weight="1"
-                            android:background="?android:attr/listDivider" />
+                            android:layout_marginTop="4dp" />
 
                     </LinearLayout>
-
-                    <!-- Google OAuth button -->
-                    <Button
-                        android:id="@+id/gateway_google_login_button"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/agent_gateway_google_login"
-                        android:layout_marginBottom="16dp" />
 
                 </LinearLayout>
             </ScrollView>
