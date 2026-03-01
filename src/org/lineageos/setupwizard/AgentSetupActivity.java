@@ -410,6 +410,8 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
                 "agent_wizard_identity", identityMd);
         Settings.Secure.putString(getContentResolver(),
                 "agent_wizard_user", userMd);
+        Settings.Secure.putString(getContentResolver(),
+                "agent_selected_emoji", agentEmoji);
         Settings.Secure.putInt(getContentResolver(),
                 "agent_wizard_complete", 1);
 
