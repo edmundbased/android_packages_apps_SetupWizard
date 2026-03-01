@@ -22,7 +22,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 /**
- * HTTP client for the ConsciOS auth proxy (Cloudflare Worker).
+ * HTTP client for the BasedOS auth proxy (Cloudflare Worker).
  * All methods run blocking I/O and must be called from a background thread.
  */
 final class PrivyAuthClient {
@@ -31,7 +31,7 @@ final class PrivyAuthClient {
     private static final int READ_TIMEOUT_MS = 20_000;
 
     private static final String PROP_AUTH_PROXY_URL = "persist.agent.gateway_auth_url";
-    private static final String DEFAULT_AUTH_PROXY_URL = "https://conscios-auth.admin-2a3.workers.dev";
+    private static final String DEFAULT_AUTH_PROXY_URL = "https://basedos-gateway.admin-2a3.workers.dev";
 
     interface Callback<T> {
         void onSuccess(T result);
