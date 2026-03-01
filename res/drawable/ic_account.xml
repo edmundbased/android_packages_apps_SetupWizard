@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: 2026 The BasedOS Project
+     SPDX-License-Identifier: Apache-2.0
+     Based logo mark (icon only) from based-logo.svg
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="28dp"
+    android:viewportWidth="130.109"
+    android:viewportHeight="150.44">
+
+    <!-- Top half -->
+    <path
+        android:fillColor="#FF6940"
+        android:pathData="M130.109,49.675C130.109,59.816 126.859,69.202 121.352,76.836C112.918,65.142 99.175,57.534 83.656,57.534C63.334,57.534 44.704,64.777 30.211,76.836C11.755,61.482 0,38.348 0,12.465V3.212H83.653C96.48,3.212 108.096,8.415 116.504,16.823C124.906,25.225 130.109,36.848 130.109,49.675Z" />
+
+    <!-- Bottom half -->
+    <path
+        android:fillColor="#F78B67"
+        android:pathData="M130.109,103.987C130.109,116.814 124.906,128.431 116.504,136.829C108.096,145.237 96.48,150.44 83.653,150.44H0V141.187C0,115.304 11.755,92.171 30.211,76.833C44.704,88.875 63.334,96.125 83.656,96.125C99.175,96.125 112.909,88.517 121.352,76.833C126.859,84.466 130.109,93.852 130.109,103.987Z" />
+
+</vector>

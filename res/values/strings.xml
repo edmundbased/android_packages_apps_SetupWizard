@@ -85,6 +85,8 @@
     <string name="agent_creature_hint">AI assistant, robot, familiar spirit, ghost in the machine\u2026</string>
     <string name="agent_personality_label">Pick a personality</string>
     <string name="agent_emoji_label">Pick a signature emoji</string>
+    <string name="agent_emoji_tap_to_change">Tap to choose</string>
+    <string name="agent_emoji_picker_title">Choose emoji</string>
     <string name="agent_emoji_custom_label">Or type your own:</string>
     <string name="personality_casual">Casual &amp; friendly</string>
     <string name="personality_professional">Professional &amp; precise</string>
@@ -98,6 +100,10 @@
     <string name="style_brief">Brief &amp; direct</string>
     <string name="style_detailed">Detailed &amp; thorough</string>
     <string name="style_match">Match my style</string>
+    <!-- Based Account page -->
+    <string name="setup_based_account">Based Account</string>
+    <string name="based_account_summary">Sign in with email or Google to unlock cloud features like managed AI access.</string>
+    <string name="based_account_or">or</string>
     <string name="agent_gateway_login_label">Connect cloud account (Email / Google)</string>
     <string name="agent_gateway_login_hint">Sign in once to use managed LLM access from your BasedOS account.</string>
     <string name="agent_gateway_login_button">Sign In</string>

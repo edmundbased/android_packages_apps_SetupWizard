@@ -101,6 +101,12 @@
     <WizardAction
         wizard:uri="intent:#Intent;action=org.lineageos.setupwizard.LINEAGE_AGENT_SETUP;end"
         id="agent_setup">
+        <result wizard:action="based_account" />
+    </WizardAction>
+
+    <WizardAction
+        wizard:uri="intent:#Intent;action=org.lineageos.setupwizard.LINEAGE_BASED_ACCOUNT;end"
+        id="based_account">
         <result wizard:action="finish" />
     </WizardAction>
 

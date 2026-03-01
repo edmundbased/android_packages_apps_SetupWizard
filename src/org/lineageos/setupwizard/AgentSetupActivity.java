@@ -5,6 +5,7 @@
 
 package org.lineageos.setupwizard;
 
+import android.app.AlertDialog;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -17,21 +18,18 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.EditText;
 import android.widget.GridLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
-import android.widget.Button;
+import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
 import com.android.settingslib.Utils;
-import com.basedos.privybridge.PrivyBridge;
-import com.basedos.privybridge.PrivyBridgeCallback;
-import com.basedos.privybridge.PrivyBridgeResult;
-import com.basedos.privybridge.PrivyBridgeConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -151,28 +149,35 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         "\u274C",       "\u2753",       "\u2757",       "\uD83D\uDCAE",
     };
 
+    // Category metadata for the emoji picker dialog
+    private static final String[] CATEGORY_LABELS = {
+        "Smileys", "Gestures", "Animals", "Nature", "Food",
+        "Travel", "Objects", "Activities", "Symbols"
+    };
+    private static final String[] CATEGORY_ICONS = {
+        "\uD83D\uDE00", "\uD83D\uDC4B", "\uD83D\uDC3E", "\uD83C\uDF3F", "\uD83C\uDF55",
+        "\uD83D\uDE80", "\uD83D\uDCBB", "\u26BD", "\u2764\uFE0F"
+    };
+    private static final int[] CATEGORY_STARTS = {
+        0, 80, 128, 184, 228, 268, 300, 332, 356
+    };
+    private static final int[] CATEGORY_COUNTS = {
+        80, 48, 56, 44, 40, 32, 32, 24, 32
+    };
+
+    // Default emoji: rabbit face
+    private static final int DEFAULT_EMOJI_INDEX = 132;
+
     private EditText mAgentNameInput;
     private EditText mAgentCreatureInput;
     private RadioGroup mPersonalityGroup;
     private EditText mUserNameInput;
     private EditText mUserInterestsInput;
     private RadioGroup mResponseStyleGroup;
-    private EditText mEmojiCustomInput;
+    private TextView mSelectedEmojiDisplay;
 
-    // Gateway auth
-    private TextView mGatewayAuthStatus;
-    private LinearLayout mGatewayEmailRow;
-    private EditText mGatewayEmailInput;
-    private Button mGatewaySendCodeButton;
-    private LinearLayout mGatewayOtpRow;
-    private EditText mGatewayOtpInput;
-    private Button mGatewayVerifyCodeButton;
-    private Button mGatewayGoogleLoginButton;
-
-    private String mSelectedEmoji = EMOJI_OPTIONS[0];
+    private String mSelectedEmoji = EMOJI_OPTIONS[DEFAULT_EMOJI_INDEX];
     private boolean mUsingCustomEmoji;
-    private final List<TextView> mEmojiViews = new ArrayList<>();
-    private View mSelectedEmojiView;
     private int mAccentColor;
 
     @Override
@@ -186,338 +191,199 @@ public class AgentSetupActivity extends BaseSetupWizardActivity {
         mUserNameInput = findViewById(R.id.user_name_input);
         mUserInterestsInput = findViewById(R.id.user_interests_input);
         mResponseStyleGroup = findViewById(R.id.response_style_radio_group);
-        mEmojiCustomInput = findViewById(R.id.agent_emoji_custom_input);
-
-        // Gateway auth views
-        mGatewayAuthStatus = findViewById(R.id.gateway_auth_status);
-        mGatewayEmailRow = findViewById(R.id.gateway_email_row);
-        mGatewayEmailInput = findViewById(R.id.gateway_email_input);
-        mGatewaySendCodeButton = findViewById(R.id.gateway_send_code_button);
-        mGatewayOtpRow = findViewById(R.id.gateway_otp_row);
-        mGatewayOtpInput = findViewById(R.id.gateway_otp_input);
-        mGatewayVerifyCodeButton = findViewById(R.id.gateway_verify_code_button);
-        mGatewayGoogleLoginButton = findViewById(R.id.gateway_google_login_button);
+        mSelectedEmojiDisplay = findViewById(R.id.selected_emoji_display);
 
         mAgentNameInput.setText(getString(R.string.agent_default_name));
         mPersonalityGroup.check(R.id.radio_casual);
         mResponseStyleGroup.check(R.id.radio_style_match);
 
         mAccentColor = Utils.getColorAccentDefaultColor(this);
-        buildEmojiGrid();
-        setupCustomEmojiInput();
 
-        // Gateway auth listeners
-        mGatewaySendCodeButton.setOnClickListener(v -> sendEmailCode());
-        mGatewayVerifyCodeButton.setOnClickListener(v -> verifyEmailCode());
-        mGatewayGoogleLoginButton.setOnClickListener(v -> launchGoogleLogin());
-
-        refreshGatewayAuthStatus();
+        // Show default emoji and wire up picker trigger
+        mSelectedEmojiDisplay.setText(mSelectedEmoji);
+        findViewById(R.id.emoji_picker_trigger).setOnClickListener(v -> showEmojiPicker());
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        refreshGatewayAuthStatus();
-    }
+    // -- Emoji picker dialog --
 
-    /**
-     * Lazily initialize PrivyBridge. SetupWizard runs as UID 1000 (system),
-     * where WebView is blocked. If the Privy SDK tries to create a WebView
-     * during init, we catch the exception and disable Privy-based auth.
-     */
-    private boolean ensurePrivyInitialized() {
-        if (PrivyBridge.isInitialized()) {
-            return true;
-        }
-        try {
-            PrivyBridgeConfig config =
-                    PrivyBridgeConfig.fromSystemProperties("basedos-setup");
-            PrivyBridge.init(this, config);
-            return true;
-        } catch (Exception e) {
-            Log.w(TAG, "Cannot init PrivyBridge (WebView blocked in system process)", e);
-            return false;
-        }
-    }
+    private void showEmojiPicker() {
+        final View dialogView = getLayoutInflater().inflate(
+                R.layout.dialog_emoji_picker, null);
+        final LinearLayout chipContainer = dialogView.findViewById(R.id.emoji_category_chips);
+        final ScrollView emojiScroll = dialogView.findViewById(R.id.emoji_scroll);
+        final LinearLayout emojiContainer = dialogView.findViewById(R.id.emoji_container);
+        final EditText customInput = dialogView.findViewById(R.id.dialog_emoji_custom_input);
 
-    // ── Gateway Email OTP (via Privy SDK) ───────────────────────────────
+        final String[] pickerEmoji = {mSelectedEmoji};
+        final boolean[] pickerUsingCustom = {mUsingCustomEmoji};
+        final View[] pickerSelectedView = {null};
+        final List<View> sectionViews = new ArrayList<>();
 
-    private void sendEmailCode() {
-        final String email = mGatewayEmailInput.getText().toString().trim();
-        if (TextUtils.isEmpty(email) || !email.contains("@")) {
-            Toast.makeText(this, "Enter a valid email address", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        final int cellSize = dpToPx(36);
+        final int cellRadius = dpToPx(8);
+        final int cellMargin = dpToPx(1);
 
-        mGatewaySendCodeButton.setEnabled(false);
-        mGatewaySendCodeButton.setText("Sending\u2026");
+        // Build emoji sections
+        for (int c = 0; c < CATEGORY_LABELS.length; c++) {
+            // Section header
+            final TextView header = new TextView(this);
+            header.setText(CATEGORY_LABELS[c]);
+            header.setTextAppearance(android.R.style.TextAppearance_Material_Body1);
+            header.setTextColor(Utils.getColorAttrDefaultColor(this,
+                    android.R.attr.textColorPrimary));
+            header.setPadding(0, dpToPx(12), 0, dpToPx(4));
+            emojiContainer.addView(header);
+            sectionViews.add(header);
 
-        if (!ensurePrivyInitialized()) {
-            Toast.makeText(this, "Auth not available yet — try again later",
-                    Toast.LENGTH_LONG).show();
-            mGatewaySendCodeButton.setEnabled(true);
-            mGatewaySendCodeButton.setText(R.string.agent_gateway_send_code);
-            return;
-        }
-        PrivyBridge.getInstance().sendEmailOtp(email, new PrivyBridgeCallback<>() {
-            @Override
-            public void onSuccess(Void result) {
-                runOnUiThread(() -> {
-                    mGatewayOtpRow.setVisibility(View.VISIBLE);
-                    mGatewaySendCodeButton.setEnabled(true);
-                    mGatewaySendCodeButton.setText(R.string.agent_gateway_send_code);
-                    mGatewayAuthStatus.setText(R.string.agent_gateway_code_sent);
-                    mGatewayOtpInput.requestFocus();
+            // Grid for this category
+            final GridLayout grid = new GridLayout(this);
+            grid.setColumnCount(7);
+
+            final int start = CATEGORY_STARTS[c];
+            final int count = CATEGORY_COUNTS[c];
+            for (int i = start; i < start + count; i++) {
+                final String emoji = EMOJI_OPTIONS[i];
+                final TextView tv = new TextView(this);
+                tv.setText(emoji);
+                tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+                tv.setGravity(Gravity.CENTER);
+                tv.setClickable(true);
+                tv.setFocusable(false);
+
+                final GradientDrawable bg = new GradientDrawable();
+                bg.setCornerRadius(cellRadius);
+                bg.setColor(0x00000000);
+                bg.setStroke(0, 0x00000000);
+                tv.setBackground(bg);
+
+                final GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+                params.width = cellSize;
+                params.height = cellSize;
+                params.setMargins(cellMargin, cellMargin, cellMargin, cellMargin);
+                params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED);
+                tv.setLayoutParams(params);
+
+                tv.setOnClickListener(v -> {
+                    // Deselect previous
+                    if (pickerSelectedView[0] != null) {
+                        final GradientDrawable prevBg =
+                                (GradientDrawable) pickerSelectedView[0].getBackground();
+                        prevBg.setColor(0x00000000);
+                        prevBg.setStroke(0, 0x00000000);
+                    }
+                    // Select this one
+                    pickerEmoji[0] = emoji;
+                    pickerUsingCustom[0] = false;
+                    pickerSelectedView[0] = v;
+                    final GradientDrawable selBg = (GradientDrawable) v.getBackground();
+                    selBg.setColor(ColorStateList.valueOf(mAccentColor)
+                            .withAlpha(50).getDefaultColor());
+                    selBg.setStroke(dpToPx(2), mAccentColor);
+                    if (customInput.getText().length() > 0) {
+                        customInput.setText("");
+                    }
                 });
+
+                grid.addView(tv);
+
+                // Pre-select current emoji
+                if (!mUsingCustomEmoji && emoji.equals(mSelectedEmoji)) {
+                    final View headerRef = header;
+                    tv.post(() -> {
+                        tv.performClick();
+                        emojiScroll.post(() ->
+                                emojiScroll.smoothScrollTo(0, headerRef.getTop()));
+                    });
+                }
             }
+
+            emojiContainer.addView(grid);
+        }
+
+        // Pre-fill custom input if using custom emoji
+        if (mUsingCustomEmoji) {
+            customInput.setText(mSelectedEmoji);
+        }
+
+        // Custom emoji input watcher
+        customInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
 
             @Override
-            public void onError(String errorCode, String message) {
-                runOnUiThread(() -> {
-                    mGatewaySendCodeButton.setEnabled(true);
-                    mGatewaySendCodeButton.setText(R.string.agent_gateway_send_code);
-                    Toast.makeText(AgentSetupActivity.this,
-                            "Failed to send code: " + message, Toast.LENGTH_LONG).show();
-                });
-            }
-        });
-    }
-
-    private void verifyEmailCode() {
-        final String email = mGatewayEmailInput.getText().toString().trim();
-        final String code = mGatewayOtpInput.getText().toString().trim();
-
-        if (TextUtils.isEmpty(code) || code.length() < 6) {
-            Toast.makeText(this, "Enter the 6-digit code", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        mGatewayVerifyCodeButton.setEnabled(false);
-        mGatewayVerifyCodeButton.setText("Verifying\u2026");
-
-        if (!ensurePrivyInitialized()) {
-            mGatewayVerifyCodeButton.setEnabled(true);
-            mGatewayVerifyCodeButton.setText(R.string.agent_gateway_verify_code);
-            return;
-        }
-        PrivyBridge.getInstance().loginWithEmailOtp(email, code,
-                new PrivyBridgeCallback<>() {
-            @Override
-            public void onSuccess(PrivyBridgeResult result) {
-                onPrivyLoginSuccess(result);
-            }
-
-            @Override
-            public void onError(String errorCode, String message) {
-                runOnUiThread(() -> {
-                    mGatewayVerifyCodeButton.setEnabled(true);
-                    mGatewayVerifyCodeButton.setText(R.string.agent_gateway_verify_code);
-                    Toast.makeText(AgentSetupActivity.this,
-                            "Verification failed: " + message, Toast.LENGTH_LONG).show();
-                });
-            }
-        });
-    }
-
-    // ── Google OAuth (via Privy SDK) ─────────────────────────────────────
-
-    private void launchGoogleLogin() {
-        mGatewayGoogleLoginButton.setEnabled(false);
-
-        if (!ensurePrivyInitialized()) {
-            mGatewayGoogleLoginButton.setEnabled(true);
-            Toast.makeText(this, "Auth not available yet — try again later",
-                    Toast.LENGTH_LONG).show();
-            return;
-        }
-        PrivyBridge.getInstance().loginWithOAuth("google",
-                new PrivyBridgeCallback<>() {
-            @Override
-            public void onSuccess(PrivyBridgeResult result) {
-                onPrivyLoginSuccess(result);
-            }
-
-            @Override
-            public void onError(String errorCode, String message) {
-                runOnUiThread(() -> {
-                    mGatewayGoogleLoginButton.setEnabled(true);
-                    Toast.makeText(AgentSetupActivity.this,
-                            "Sign-in failed: " + message, Toast.LENGTH_LONG).show();
-                });
-            }
-        });
-    }
-
-    // ── Privy login success handler ──────────────────────────────────────
-
-    private void onPrivyLoginSuccess(PrivyBridgeResult result) {
-        Log.i(TAG, "Privy login success: userId=" + result.userId
-                + ", email=" + result.email);
-
-        // Persist Privy user info to Settings.Secure for AgentConsoleApp
-        Settings.Secure.putInt(getContentResolver(), "agent_gateway_logged_in", 1);
-        if (result.userId != null) {
-            Settings.Secure.putString(getContentResolver(),
-                    "agent_privy_user_id", result.userId);
-        }
-        if (result.email != null) {
-            Settings.Secure.putString(getContentResolver(),
-                    "agent_privy_email", result.email);
-        }
-
-        // Exchange identity token for gateway access + refresh tokens
-        if (result.hasIdentityToken()) {
-            try {
-                final AgentGatewayAuthController.ExchangeResult exchange =
-                        AgentGatewayAuthController.exchangeOrDirect(
-                                result.identityToken);
-                AgentGatewayAuthController.persistSession(exchange);
-                Log.i(TAG, "Gateway session persisted after Privy login");
-            } catch (Exception e) {
-                Log.e(TAG, "Gateway token exchange failed", e);
-                runOnUiThread(() -> Toast.makeText(AgentSetupActivity.this,
-                        "Gateway login failed: " + e.getMessage(),
-                        Toast.LENGTH_LONG).show());
-                return;
-            }
-        }
-
-        runOnUiThread(() -> {
-            mGatewayVerifyCodeButton.setEnabled(true);
-            mGatewayVerifyCodeButton.setText(R.string.agent_gateway_verify_code);
-            mGatewayGoogleLoginButton.setEnabled(true);
-            refreshGatewayAuthStatus();
-            Toast.makeText(AgentSetupActivity.this,
-                    "Signed in", Toast.LENGTH_SHORT).show();
-        });
-    }
-
-    // ── Gateway status ──────────────────────────────────────────────────
-
-    private void refreshGatewayAuthStatus() {
-        if (mGatewayAuthStatus == null) {
-            return;
-        }
-        final boolean hasSession = PrivyBridge.isInitialized()
-                && PrivyBridge.getInstance().isAuthenticated();
-        final boolean hasStoredToken = new java.io.File(
-                "/data/misc/agent/runtime/llm_api_key").exists();
-        if (!hasSession && !hasStoredToken) {
-            mGatewayAuthStatus.setText(R.string.agent_gateway_logged_out);
-            setLoginUiVisible(true);
-            return;
-        }
-        final PrivyBridgeResult user = hasSession
-                ? PrivyBridge.getInstance().getCurrentUser() : null;
-        if (user != null && user.email != null) {
-            mGatewayAuthStatus.setText(getString(R.string.agent_gateway_logged_in)
-                    + " (" + user.email + ")");
-        } else {
-            mGatewayAuthStatus.setText(R.string.agent_gateway_logged_in);
-        }
-        setLoginUiVisible(false);
-    }
-
-    private void setLoginUiVisible(boolean visible) {
-        final int vis = visible ? View.VISIBLE : View.GONE;
-        if (mGatewayEmailRow != null) mGatewayEmailRow.setVisibility(vis);
-        if (mGatewayGoogleLoginButton != null) mGatewayGoogleLoginButton.setVisibility(vis);
-        if (!visible && mGatewayOtpRow != null) {
-            mGatewayOtpRow.setVisibility(View.GONE);
-        }
-    }
-
-    // ── Emoji grid ──────────────────────────────────────────────────────
-
-    private void buildEmojiGrid() {
-        final GridLayout grid = findViewById(R.id.emoji_grid);
-        grid.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
-        final int cellSizePx = dpToPx(40);
-        final int radiusPx = dpToPx(10);
-
-        for (int i = 0; i < EMOJI_OPTIONS.length; i++) {
-            final String emoji = EMOJI_OPTIONS[i];
-            final TextView tv = new TextView(this);
-            tv.setText(emoji);
-            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
-            tv.setGravity(Gravity.CENTER);
-            tv.setClickable(true);
-            tv.setFocusable(false);
-
-            final GradientDrawable bg = new GradientDrawable();
-            bg.setCornerRadius(radiusPx);
-            bg.setColor(0x00000000);
-            bg.setStroke(0, 0x00000000);
-            tv.setBackground(bg);
-
-            final GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-            params.width = cellSizePx;
-            params.height = cellSizePx;
-            params.setMargins(dpToPx(1), dpToPx(1), dpToPx(1), dpToPx(1));
-            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED);
-            tv.setLayoutParams(params);
-
-            tv.setOnClickListener(v -> selectGridEmoji(emoji, tv));
-            grid.addView(tv);
-            mEmojiViews.add(tv);
-
-            if (i == 0) {
-                selectGridEmoji(emoji, tv);
-            }
-        }
-    }
-
-    private void setupCustomEmojiInput() {
-        mEmojiCustomInput.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            public void onTextChanged(CharSequence s, int st, int b, int c) {}
 
             @Override
             public void afterTextChanged(Editable s) {
                 final String custom = s.toString().trim();
                 if (!TextUtils.isEmpty(custom)) {
-                    deselectGrid();
-                    mSelectedEmoji = custom;
-                    mUsingCustomEmoji = true;
-                } else if (mUsingCustomEmoji) {
-                    mUsingCustomEmoji = false;
-                    if (!mEmojiViews.isEmpty()) {
-                        selectGridEmoji(EMOJI_OPTIONS[0], mEmojiViews.get(0));
+                    if (pickerSelectedView[0] != null) {
+                        final GradientDrawable prevBg =
+                                (GradientDrawable) pickerSelectedView[0].getBackground();
+                        prevBg.setColor(0x00000000);
+                        prevBg.setStroke(0, 0x00000000);
+                        pickerSelectedView[0] = null;
                     }
+                    pickerEmoji[0] = custom;
+                    pickerUsingCustom[0] = true;
                 }
             }
         });
-    }
 
-    private void selectGridEmoji(String emoji, TextView view) {
-        deselectGrid();
-        mSelectedEmoji = emoji;
-        mSelectedEmojiView = view;
-        mUsingCustomEmoji = false;
+        // Category chips
+        for (int c = 0; c < CATEGORY_ICONS.length; c++) {
+            final int catIdx = c;
+            final TextView chip = new TextView(this);
+            chip.setText(CATEGORY_ICONS[c]);
+            chip.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+            chip.setPadding(dpToPx(10), dpToPx(6), dpToPx(10), dpToPx(6));
+            chip.setClickable(true);
 
-        final GradientDrawable bg = (GradientDrawable) view.getBackground();
-        bg.setColor(ColorStateList.valueOf(mAccentColor).withAlpha(50).getDefaultColor());
-        bg.setStroke(dpToPx(2), mAccentColor);
+            final GradientDrawable chipBg = new GradientDrawable();
+            chipBg.setCornerRadius(dpToPx(16));
+            chipBg.setColor(0x20808080);
+            chip.setBackground(chipBg);
 
-        if (mEmojiCustomInput.getText().length() > 0) {
-            mEmojiCustomInput.setText("");
+            final LinearLayout.LayoutParams chipParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            chipParams.setMargins(dpToPx(2), 0, dpToPx(2), 0);
+            chip.setLayoutParams(chipParams);
+
+            chip.setOnClickListener(v -> {
+                final View target = sectionViews.get(catIdx);
+                emojiScroll.smoothScrollTo(0, target.getTop());
+            });
+
+            chipContainer.addView(chip);
+        }
+
+        // Show dialog
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.agent_emoji_picker_title)
+                .setView(dialogView)
+                .setPositiveButton(R.string.done, (d, which) -> {
+                    mSelectedEmoji = pickerEmoji[0];
+                    mUsingCustomEmoji = pickerUsingCustom[0];
+                    mSelectedEmojiDisplay.setText(mSelectedEmoji);
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .create();
+
+        dialog.show();
+
+        // Constrain dialog size
+        final Window window = dialog.getWindow();
+        if (window != null) {
+            final int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            final int screenHeight = getResources().getDisplayMetrics().heightPixels;
+            window.setLayout(
+                    (int) (screenWidth * 0.92),
+                    (int) (screenHeight * 0.65));
         }
     }
 
-    private void deselectGrid() {
-        if (mSelectedEmojiView != null) {
-            final GradientDrawable prevBg =
-                    (GradientDrawable) mSelectedEmojiView.getBackground();
-            prevBg.setColor(0x00000000);
-            prevBg.setStroke(0, 0x00000000);
-            mSelectedEmojiView = null;
-        }
-    }
-
-    // ── Setup wizard navigation ─────────────────────────────────────────
+    // -- Setup wizard navigation --
 
     @Override
     protected void onNextPressed() {

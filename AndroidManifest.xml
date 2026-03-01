@@ -295,6 +295,19 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".BasedAccountActivity"
+            android:label="@string/activity_label_empty"
+            android:configChanges="mcc|mnc"
+            android:immersive="true"
+            android:exported="true"
+            android:windowSoftInputMode="stateAlwaysHidden">
+            <intent-filter>
+                <action android:name="org.lineageos.setupwizard.LINEAGE_BASED_ACCOUNT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <!-- Privy SDK OAuth redirect handler -->
         <activity
             android:name="io.privy.sdk.oAuth.PrivyRedirectActivity"
